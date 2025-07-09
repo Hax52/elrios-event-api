@@ -2,7 +2,22 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fetch_event import fetch_event_data
 import os
+import subprocess
 
+# Install Chromium on Render free tier (if not already installed)
+def ensure_chromium_installed():
+    chromium_path = "/opt/render/.cache/ms-playwright/chromium_headless_shell-1179/chrome-linux/headless_shell"
+    if not os.path.exists(chromium_path):
+        try:
+            print("▶ Installing Chromium for Playwright...")
+            subprocess.run(["playwright", "install", "chromium"], check=True)
+        except Exception as e:
+            print("❌ Failed to install Chromium:", e)
+
+# Call before FastAPI starts
+ensure_chromium_installed()
+
+# ────────────────────────────
 app = FastAPI()
 
 @app.get("/api/event")
@@ -21,8 +36,8 @@ async def get_event():
 def get_event_image():
     return FileResponse("calendar_padded.png")
 
-# Only for local testing — Render ignores this when using the Start Command
+# Local dev only — Render ignores this section
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8000))  # Render injects PORT
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
