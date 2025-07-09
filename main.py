@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fetch_event import fetch_event_data
+import os
 
 app = FastAPI()
 
@@ -19,3 +20,9 @@ async def get_event():
 @app.get("/api/event/image")
 def get_event_image():
     return FileResponse("calendar_padded.png")
+
+# Only for local testing — Render ignores this when using the Start Command
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))  # Render injects PORT
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
