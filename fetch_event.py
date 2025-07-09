@@ -15,6 +15,7 @@ async def fetch_event_data():
 
         calendar = await page.query_selector("#calendar")
         if calendar:
+            await calendar.scroll_into_view_if_needed()  # ✅ Ensure visibility
             box = await calendar.bounding_box()
             if box:
                 expanded_box = {
@@ -25,9 +26,9 @@ async def fetch_event_data():
                 }
                 await page.screenshot(path=IMAGE_PATH, clip=expanded_box)
 
+                bg_color = ImageColor.getrgb("#15151a")
                 with Image.open(IMAGE_PATH) as img:
-                    bg = ImageColor.getrgb("#15151a")
-                    padded = Image.new("RGB", (img.width + PADDING * 2, img.height + PADDING * 2), bg)
+                    padded = Image.new("RGB", (img.width + PADDING * 2, img.height + PADDING * 2), bg_color)
                     padded.paste(img, (PADDING, PADDING))
                     padded.save(CROPPED_IMAGE_PATH)
 
