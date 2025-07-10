@@ -3,8 +3,9 @@ from datetime import datetime
 from PIL import Image, ImageColor
 import os
 
-IMAGE_PATH = "calendar.png"
-CROPPED_IMAGE_PATH = "calendar_padded.png"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGE_PATH = os.path.join(BASE_DIR, "calendar.png")
+CROPPED_IMAGE_PATH = os.path.join(BASE_DIR, "calendar_padded.png")
 PADDING = 30
 
 async def fetch_event_data():
