@@ -3,11 +3,22 @@ from fastapi.responses import FileResponse, JSONResponse
 from fetch_event import fetch_event_data
 import os
 import subprocess
+import asyncio
 
 app = FastAPI()
 
-IMAGE_PATH = "calendar.png"
-CROPPED_IMAGE_PATH = "calendar_padded.png"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGE_PATH = os.path.join(BASE_DIR, "calendar.png")
+CROPPED_IMAGE_PATH = os.path.join(BASE_DIR, "calendar_padded.png")
+
+@app.on_event("startup")
+async def generate_calendar_on_startup():
+    try:
+        print("▶ Generating calendar on startup...")
+        await fetch_event_data()
+        print("✅ Calendar image generated.")
+    except Exception as e:
+        print(f"❌ Failed to generate calendar image on startup: {e}")
 
 @app.get("/healthz")
 def health_check():
