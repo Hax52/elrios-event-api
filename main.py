@@ -6,6 +6,9 @@ import subprocess
 
 app = FastAPI()
 
+IMAGE_PATH = "calendar.png"
+CROPPED_IMAGE_PATH = "calendar_padded.png"
+
 @app.get("/healthz")
 def health_check():
     return {"ok": True}
@@ -24,9 +27,9 @@ async def get_event():
 
 @app.get("/api/event/image")
 def get_event_image():
-    if os.path.exists("calendar_padded.png"):
-        return FileResponse("calendar_padded.png")
-    return JSONResponse(status_code=404, content={"error": "No image found"})
+    if os.path.exists(CROPPED_IMAGE_PATH):
+        return FileResponse(CROPPED_IMAGE_PATH)
+    return JSONResponse(status_code=404, content={"error": "calendar_padded.png not found"})
 
 # Local dev only — ignored by Render
 if __name__ == "__main__":
