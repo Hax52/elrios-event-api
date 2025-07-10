@@ -4,21 +4,11 @@ from fetch_event import fetch_event_data
 import os
 import subprocess
 
-# Install Chromium on Render free tier (if not already installed)
-def ensure_chromium_installed():
-    chromium_path = "/opt/render/.cache/ms-playwright/chromium_headless_shell-1179/chrome-linux/headless_shell"
-    if not os.path.exists(chromium_path):
-        try:
-            print("▶ Installing Chromium for Playwright...")
-            subprocess.run(["playwright", "install", "chromium"], check=True)
-        except Exception as e:
-            print("❌ Failed to install Chromium:", e)
-
-# Call before FastAPI starts
-ensure_chromium_installed()
-
-# ────────────────────────────
 app = FastAPI()
+
+@app.get("/healthz")
+def health_check():
+    return {"ok": True}
 
 @app.get("/api/event")
 async def get_event():
@@ -34,9 +24,11 @@ async def get_event():
 
 @app.get("/api/event/image")
 def get_event_image():
-    return FileResponse("calendar_padded.png")
+    if os.path.exists("calendar_padded.png"):
+        return FileResponse("calendar_padded.png")
+    return JSONResponse(status_code=404, content={"error": "No image found"})
 
-# Local dev only — Render ignores this section
+# Local dev only — ignored by Render
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
