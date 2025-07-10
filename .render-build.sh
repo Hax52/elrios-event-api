@@ -9,4 +9,6 @@ rm -rf /opt/render/.cache/ms-playwright
 echo "▶ Installing Chromium via Playwright..."
 playwright install chromium || exit 1
 
+playwright install || exit 1
+
 echo "✅ Build script finished."
