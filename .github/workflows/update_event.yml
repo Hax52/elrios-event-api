@@ -1,0 +1,65 @@
+name: Update Elrios Event Data
+
+on:
+  schedule:
+    # 00:01 UTC = 09:01 JST — the game's event resets exactly at 09:00 JST,
+    # so one minute later the site's calendar already shows the new day.
+    # The bot doesn't rely on this timing anyway: it verifies the data's
+    # server_time is from today before posting, so even if GitHub delays
+    # this cron by several minutes, the post simply follows whenever the
+    # fresh commit lands.
+    - cron: '1 0 * * *'
+  workflow_dispatch: {}  # lets you trigger it manually from the Actions tab to test
+
+permissions:
+  contents: write
+
+# Prevent two runs (e.g. a manual trigger overlapping the schedule) from
+# racing each other and fighting over the same git push.
+concurrency:
+  group: update-elrios-event-data
+  cancel-in-progress: false
+
+jobs:
+  update-event:
+    runs-on: ubuntu-latest
+    # Chromium comes pre-installed in this image, which cuts the slowest
+    # step (playwright install --with-deps, ~60-90s) out of every run.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.49.0-jammy
+    # Hard ceiling so a hung browser/selector wait can't burn hours of Actions
+    # time silently — if it's not done in 10 minutes, something is wrong.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pip install playwright==1.49.0 pillow
+
+      - name: Run scraper
+        run: python update_event.py
+
+      - name: Commit updated files
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add event_data.json calendar_padded.png
+
+          # Nothing changed (e.g. same event still active) — skip entirely.
+          git diff --quiet --cached && exit 0
+
+          # If the previous commit was also one of these auto-updates, amend
+          # it instead of adding a new one, so the repo doesn't accumulate a
+          # fresh image blob every single day forever. A real commit from you
+          # (different author/message) is never touched — only consecutive
+          # auto-update commits get squashed together.
+          LAST_AUTHOR=$(git log -1 --pretty=%an)
+          LAST_MSG=$(git log -1 --pretty=%s)
+          if [ "$LAST_AUTHOR" = "github-actions[bot]" ] && [ "$LAST_MSG" = "Auto-update daily event data" ]; then
+            git commit --amend -m "Auto-update daily event data"
+            git push --force
+          else
+            git commit -m "Auto-update daily event data"
+            git push
+          fi
